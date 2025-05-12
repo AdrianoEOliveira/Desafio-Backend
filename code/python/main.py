@@ -50,8 +50,7 @@ def criar_Tabela():
         conn.close()
 
 
-
-#adicona dados na tabela
+# Adiciona dados na tabela
 @app.route('/adicionaDados', methods=['POST'])
 def adiciona_dados():
     try:
@@ -85,6 +84,170 @@ def adiciona_dados():
         cur.close()
         conn.close()
 
+# Consulta os dados da tabela
+
+@app.route('/potencia-maxima-diaria', methods=['GET'])
+def potencia_maxima_diaria():
+    params = {
+        'inversor_id': request.args.get('inversor_id'),
+        'data_inicio': request.args.get('data_inicio'),
+        'data_fim': request.args.get('data_fim')
+    }
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute('''
+            SELECT DATE(datetime) AS dia,
+                   MAX(potencia_ativa_watt) AS maxima_potencia
+            FROM usinas
+            WHERE inversor_id = %s
+              AND datetime BETWEEN %s AND %s
+            GROUP BY dia
+            ORDER BY dia
+        ''', (params['inversor_id'], params['data_inicio'], params['data_fim']))
+        
+        resultados = [{"dia": str(row[0]), "maxima_potencia": float(row[1])} 
+                     for row in cur.fetchall()]
+        
+        return jsonify(resultados), 200
+        
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/media-temperatura-diaria', methods=['GET'])
+def media_temperatura_diaria():
+    params = {
+        'inversor_id': request.args.get('inversor_id'),
+        'data_inicio': request.args.get('data_inicio'),
+        'data_fim': request.args.get('data_fim')
+    }
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute('''
+            SELECT DATE(datetime) AS dia,
+                   AVG(temperatura_celsius) AS media_temperatura
+            FROM usinas
+            WHERE inversor_id = %s
+              AND datetime BETWEEN %s AND %s
+            GROUP BY dia
+            ORDER BY dia
+        ''', (params['inversor_id'], params['data_inicio'], params['data_fim']))
+
+        resultados = [
+            {"dia": str(row[0]), "media_temperatura": float(row[1])}
+            for row in cur.fetchall()
+        ]
+
+        return jsonify(resultados), 200
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/geracao-por-usina', methods=['GET'])
+def geracao_por_usina():
+    usina_id = request.args.get('usina_id')
+    data_inicio = request.args.get('data_inicio')
+    data_fim = request.args.get('data_fim')
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Definição do range de inversores
+        range_inversor = (1, 4) if usina_id == '1' else (5, 8) if usina_id == '2' else None
+        
+        if not range_inversor:
+            return jsonify({"erro": "ID da usina inválido. Use 1 ou 2."}), 400
+
+        # Cálculo da integral para múltiplos inversores
+        cur.execute('''
+            WITH DadosUsina AS (
+                SELECT 
+                    inversor_id,
+                    datetime,
+                    potencia_ativa_watt,
+                    EXTRACT(EPOCH FROM (datetime - LAG(datetime) OVER (
+                        PARTITION BY inversor_id ORDER BY datetime
+                    )) / 3600 AS horas_intervalo
+                FROM usinas
+                WHERE inversor_id BETWEEN %s AND %s
+                    AND datetime BETWEEN %s AND %s
+            )
+            SELECT 
+                inversor_id,
+                SUM(potencia_ativa_watt * COALESCE(horas_intervalo, 0)) AS geracao_total
+            FROM DadosUsina
+            GROUP BY inversor_id
+            ORDER BY inversor_id
+        ''', (range_inversor[0], range_inversor[1], data_inicio, data_fim))
+
+        resultados = [
+            {"inversor_id": int(row[0]), "geracao_total": float(row[1])}
+            for row in cur.fetchall()
+        ]
+
+        return jsonify(resultados), 200
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/geracao-por-inversor', methods=['GET'])
+def geracao_por_inversor():
+    inversor_id = request.args.get('inversor_id')
+    data_inicio = request.args.get('data_inicio')
+    data_fim = request.args.get('data_fim')
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Cálculo da integral usando intervalos entre medições
+        cur.execute('''
+            WITH CalculoEnergia AS (
+                SELECT 
+                    datetime,
+                    potencia_ativa_watt,
+                    EXTRACT(EPOCH FROM (datetime - LAG(datetime) OVER (
+                        PARTITION BY inversor_id ORDER BY datetime
+                    )) / 3600 AS horas_intervalo
+                FROM usinas
+                WHERE inversor_id = %s
+                    AND datetime BETWEEN %s AND %s
+            )
+            SELECT 
+                DATE(datetime) AS dia,
+                SUM(potencia_ativa_watt * COALESCE(horas_intervalo, 0)) AS geracao_total
+            FROM CalculoEnergia
+            GROUP BY dia
+            ORDER BY dia
+        ''', (inversor_id, data_inicio, data_fim))
+
+        resultados = [
+            {"dia": str(row[0]), "geracao_total": float(row[1])}
+            for row in cur.fetchall()
+        ]
+
+        return jsonify(resultados), 200
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
 
 # Destruir a tabela
 @app.route('/destruirTabela', methods=['DELETE']) 
@@ -94,10 +257,10 @@ def destruirTabela():
         cur = conn.cursor()
         
         # Comando para destruir a tabela
-        cur.execute('DROP TABLE IF EXISTS medicoes_inversor')
+        cur.execute('DROP TABLE IF EXISTS usinas')
         conn.commit()
         
-        return jsonify({"message": "Tabela 'medicoes_inversor' excluída com sucesso!"}), 200
+        return jsonify({"mensagem": "Tabela 'usinas' excluída com sucesso!"}), 200
     
     except Exception as e:
         conn.rollback()
@@ -105,7 +268,6 @@ def destruirTabela():
     finally:
         if 'cur' in locals(): cur.close()
         if 'conn' in locals(): conn.close()
-
 
 if __name__ == '__main__':
     app.run(debug=True)
