@@ -99,7 +99,8 @@ def potencia_maxima_diaria():
     if (inversor_id is None or data_inicio is None or data_fim is None):
         return jsonify({"erro": "inversor_id, data_inicio e data_fim são obrigatórios"}), 400
     else:
-        if (inversor_id < 1 and inversor_id > 8):
+        inversor_num = int(inversor_id[0])
+        if (inversor_num < 1 and inversor_num > 8):
             return jsonify({"erro": "inversor_id deve ser entre 1 e 8"}), 400
 
     try:
@@ -137,7 +138,8 @@ def media_temperatura_diaria():
     if (inversor_id is None or data_inicio is None or data_fim is None):
         return jsonify({"erro": "inversor_id, data_inicio e data_fim são obrigatórios"}), 400
     else:
-        if (inversor_id < 1 and inversor_id > 8):
+        inversor_num = int(inversor_id[0])
+        if (inversor_num < 1 and inversor_num > 8):
             return jsonify({"erro": "inversor_id deve ser entre 1 e 8"}), 400
 
     try:
@@ -255,7 +257,8 @@ def geracao_por_inversores():
     if (inversor_id is None or data_inicio is None or data_fim is None):
         return jsonify({"erro": "inversor_id, data_inicio e data_fim são obrigatórios"}), 400
     else:
-        if (inversor_id < 1 and inversor_id > 8):
+        inversor_num = int(inversor_id[0])
+        if (inversor_num < 1 and inversor_num > 8):
             return jsonify({"erro": "inversor_id deve ser entre 1 e 8"}), 400
 
     try:
