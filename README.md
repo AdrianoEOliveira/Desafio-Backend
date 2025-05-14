@@ -72,3 +72,99 @@ Disponibilizamos um repositório com código que pode ser utilizado como apoio p
   * Instruções claras de instalação e execução local.
 * Prazo de entrega: **até 14/05 às 23:59**.
 * [Formulário de envio](https://forms.office.com/r/8RxwWJ69b4)
+
+# 📡 API de Monitoramento de Usinas
+
+Esta API em Flask permite o gerenciamento e consulta de dados de geração de energia e temperatura de inversores de usinas solares, armazenados em um banco de dados PostgreSQL.
+
+---
+
+## ✅ Pré-requisitos
+
+Antes de rodar o projeto, você precisará ter:
+
+- ✅ **Python 3.10+**
+- ✅ **PostgreSQL** instalado e rodando
+- ✅ **Postman** para testar as rotas da API
+
+---
+
+## 📦 Instalação
+
+1. Clone o repositório e navegue até a pasta do código:
+
+```bash
+cd code/python
+```
+
+2. Instale as dependências com o `pip`:
+
+```bash
+pip install flask psycopg2-binary python-dotenv
+```
+
+3. Configure as variáveis de ambiente no arquivo `.env` (exemplo):
+
+```env
+DB_HOST=localhost
+DB_NAME=base
+DB_USER=postgres
+DB_PASS=post
+DB_PORT=5432
+```
+
+4. Configure uma databases no pgAdmin 4 com as configurações acima
+
+---
+
+## ▶️ Como rodar a API
+
+Execute o arquivo principal no terminal:
+
+```bash
+python main.py
+```
+
+A API estará acessível em:  
+[http://localhost:5000](http://localhost:5000)
+
+---
+
+## 🔌 Coleção Postman
+
+Você pode testar todas as rotas da API usando a coleção do Postman:
+
+[Abrir no Postman](https://www.postman.com/spaceflight-geoscientist-53516064/workspace/api/collection/23945746-3758a00e-1607-4093-8da9-b1d10477bfcc?action=share&creator=23945746)
+
+
+---
+
+## Endpoints disponíveis
+
+| Método | Rota                          | Descrição                                      |
+|--------|-------------------------------|-----------------------------------------------|
+| POST   | `/criarTabela`                | Cria a tabela `usinas`                        |
+| DELETE | `/destruirTabela`             | Remove a tabela `usinas`                      |
+| POST   | `/adicionaDados`              | Insere dados de geração e temperatura         |
+| GET    | `/potencia-maxima-diaria`     | Potência máxima por dia                       |
+| GET    | `/media-temperatura-diaria`   | Temperatura média por dia                     |
+| GET    | `/geracao-por-usina`          | Geração agregada por usina (ID 1 ou 2)        |
+| GET    | `/geracao-por-inversores`     | Geração específica por inversor               |
+
+---
+
+## Observações
+
+- Os endpoints de consulta exigem os parâmetros `inversor_id`, `data_inicio`, e `data_fim` no formato `YYYY-MM-DD`.
+- A estrutura de dados usada no endpoint `/adicionaDados` deve conter a chave `datetime` no formato ISO com sufixo `Z`.
+
+---
+
+
+
+
+
+
+
+
+
