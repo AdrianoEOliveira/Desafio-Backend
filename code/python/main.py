@@ -92,11 +92,15 @@ def adiciona_dados():
 
 @app.route('/potencia-maxima-diaria', methods=['GET'])
 def potencia_maxima_diaria():
-    params = {
-        'inversor_id': request.args.get('inversor_id'),
-        'data_inicio': request.args.get('data_inicio'),
-        'data_fim': request.args.get('data_fim')
-    }
+    inversor_id = request.args.get('inversor_id'),
+    data_inicio = request.args.get('data_inicio'),
+    data_fim = request.args.get('data_fim')
+
+    if (inversor_id is None or data_inicio is None or data_fim is None):
+        return jsonify({"erro": "inversor_id, data_inicio e data_fim são obrigatórios"}), 400
+    else:
+        if (inversor_id < 1 and inversor_id > 8):
+            return jsonify({"erro": "inversor_id deve ser entre 1 e 8"}), 400
 
     try:
         conn = get_db_connection()
@@ -110,7 +114,7 @@ def potencia_maxima_diaria():
               AND datetime BETWEEN %s AND %s
             GROUP BY dia
             ORDER BY dia
-        ''', (params['inversor_id'], params['data_inicio'], params['data_fim']))
+        ''', (inversor_id, data_inicio, data_fim))
 
         resultados = [{"dia": str(row[0]), "maxima_potencia": float(row[1])}
                       for row in cur.fetchall()]
@@ -126,11 +130,15 @@ def potencia_maxima_diaria():
 
 @app.route('/media-temperatura-diaria', methods=['GET'])
 def media_temperatura_diaria():
-    params = {
-        'inversor_id': request.args.get('inversor_id'),
-        'data_inicio': request.args.get('data_inicio'),
-        'data_fim': request.args.get('data_fim')
-    }
+    inversor_id = request.args.get('inversor_id'),
+    data_inicio = request.args.get('data_inicio'),
+    data_fim = request.args.get('data_fim')
+
+    if (inversor_id is None or data_inicio is None or data_fim is None):
+        return jsonify({"erro": "inversor_id, data_inicio e data_fim são obrigatórios"}), 400
+    else:
+        if (inversor_id < 1 and inversor_id > 8):
+            return jsonify({"erro": "inversor_id deve ser entre 1 e 8"}), 400
 
     try:
         conn = get_db_connection()
@@ -144,7 +152,7 @@ def media_temperatura_diaria():
               AND datetime BETWEEN %s AND %s
             GROUP BY dia
             ORDER BY dia
-        ''', (params['inversor_id'], params['data_inicio'], params['data_fim']))
+        ''', (inversor_id, data_inicio, data_fim))
 
         resultados = [
             {"dia": str(row[0]), "media_temperatura": float(row[1])}
@@ -240,12 +248,15 @@ def geracao_por_usina():
 
 @app.route('/geracao-por-inversores', methods=['GET'])
 def geracao_por_inversores():
+    inversor_id = request.args.get('inversor_id')
     data_inicio = request.args.get('data_inicio')
     data_fim = request.args.get('data_fim')
-    inversor_id = request.args.get('inversor_id')
 
-    if not inversor_id:
-        return jsonify({"erro": "inversor_id é obrigatório"}), 400
+    if (inversor_id is None or data_inicio is None or data_fim is None):
+        return jsonify({"erro": "inversor_id, data_inicio e data_fim são obrigatórios"}), 400
+    else:
+        if (inversor_id < 1 and inversor_id > 8):
+            return jsonify({"erro": "inversor_id deve ser entre 1 e 8"}), 400
 
     try:
         conn = get_db_connection()
